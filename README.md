@@ -2,8 +2,6 @@
 
 Documentation of the internship management platform for **DevTec** (Sfax): a Spring Boot REST backend, its domain model, its UML diagrams, and the architecture that connects them.
 
-> This branch contains documentation only. No application source code was changed.
-
 ---
 
 ## Table of contents
@@ -16,7 +14,6 @@ Documentation of the internship management platform for **DevTec** (Sfax): a Spr
 4. [Architecture](#architecture)
    - [Technology stack](#technology-stack)
    - [Layered backend structure](#layered-backend-structure)
-   - [Request flow](#request-flow)
 5. [Domain model](#domain-model)
 6. [Backend API](#backend-api)
 7. [Authentication and security](#authentication-and-security)
@@ -28,14 +25,14 @@ Documentation of the internship management platform for **DevTec** (Sfax): a Spr
 
 ## Project overview
 
-The case study (`GestionStages_TP_GLFinal2026.pdf`) describes DevTec, a software company that regularly hosts interns. Internship intake happens in **January and June**.
+The goal is to develop a web app that regularly hosts interns. Internship intake happens in **January and June**.
 
 Current process:
 
 1. HR asks technical teams to propose internship projects with objectives, desired study levels (`licence`, `mastère`, `ingénieur`) and required skills (e.g. Python, Oracle).
 2. Each project is assigned a **mentor** from the technical team.
 3. HR publishes the catalogue, collects applications until a deadline, then sorts candidates by study level and by how well their skills match the project requirements.
-4. Accepted candidates receive an email and an internship **convention** is prepared, signed by the general director, then by the mentor and the intern (two copies: one for the intern, one for the mentor).
+4. Accepted candidates receive an email, and an internship ** contract ** is prepared, signed by the general director, then by the mentor and the intern (two copies: one for the intern, one for the mentor).
 5. The mentor supervises the intern on arrival.
 
 The goal of the application is to centralize this scattered, paper-based process, provide fast access for HR and mentors, and automatically rank applicants.
@@ -47,19 +44,19 @@ The goal of the application is to centralize this scattered, paper-based process
 ### Functional requirements
 
 - Manage internship projects (title, duration, objectives, required levels and weighted skills).
-- Manage mentors, HR agents, education levels, skills, tasks and accounts.
+- Manage mentors, HR agents, education levels, skills, tasks, and accounts.
 - Submit applications (`Candidature`) and attach candidate skills.
-- Filter applications by status, project or education level; accept or refuse an application.
+- Filter applications by status, project, or education level; accept or refuse an application.
 - Automatic sorting of applications based on the candidate's level and the match between candidate skills and the skills required by the project (`score` is currently a derived/transient value).
 - Manage internship conventions and their unique identifier.
-- Secure access with accounts, roles and a restricted feature set per role.
+- Secure access with accounts, roles, and a restricted feature set per role.
 
 ### Non-functional requirements
 
 - Ergonomic interfaces with clear, simple forms.
 - Centralized, quickly searchable data.
 - Secured web application and data, with access control by role.
-- Unique convention number composed of **sequence–recruitment month (1 or 6)–year**, e.g. `03-6-2026` (3rd intern recruited in June 2026).
+- Unique convention number composed of **sequence–recruitment month (1 or 6)–year**, e.g., `03-6-2026` (3rd intern recruited in June 2026).
 - Stateless, token-based authentication for the REST API.
 
 ---
@@ -87,112 +84,9 @@ Actors and use cases, as described by the case study (textual reconstruction of 
 | Candidat / Stagiaire | Browse the catalogue, submit an application, sign the convention |
 | Directeur général | Sign internship conventions |
 
-```mermaid
-usecaseDiagram
-actor Administrateur
-actor "Service RH" as RH
-actor Mentor
-actor Candidat
-actor "Directeur général" as DG
-Administrateur --> Gérer les comptes et les rôles
-RH --> Gérer les projets de stage
-RH --> Publier le catalogue
-RH --> Examiner les candidatures
-RH --> Trier les candidatures
-RH --> Préparer les conventions
-RH --> Envoyer les emails d'acceptation
-Mentor --> Définir la fiche projet
-Mentor --> Superviser le stagiaire
-Mentor --> Signer la convention
-Candidat --> Consulter le catalogue
-Candidat --> Soumettre une candidature
-Candidat --> Signer la convention
-DG --> Signer la convention
-Gérer les projets de stage --> Définir la fiche projet : include
-Trier les candidatures --> Examiner les candidatures : include
-```
-
 ### Class diagram
 
 ![Class diagram — Gestion des stages](Architecture/Class-Diagram_%20Gestion%20des%20stages.png)
-
-The diagram was generated with PlantUML and is the direct blueprint of the JPA entities in `backend/src/main/java/com/devtec/gestion_stages/entity/`. The same model is reproduced below in Mermaid:
-
-```mermaid
-classDiagram
-direction TB
-
-class Compte {
-  +Long id
-  +String login
-  +String mdp
-}
-class AgentRH {
-  +Long id
-  +String nom
-}
-class Mentor {
-  +Long id
-  +String nom
-  +String specialite
-}
-class NiveauEtudes {
-  +Long id
-  +String niveau
-}
-class ProjetStage {
-  +Long id
-  +String titre
-  +LocalDate dateDebut
-  +LocalDate dateFin
-  +String objectifs
-}
-class Tache {
-  +Long id
-  +String libelle
-}
-class Competence {
-  +Long id
-  +String libelle
-}
-class CompetenceProjet {
-  +Long id
-  +Double poids
-}
-class Candidature {
-  +Long id
-  +String nomCandidat
-  +String email
-  +LocalDate dateCandidature
-  +StatutCandidature statut
-  +Double score
-}
-class ConventionStage {
-  +Long id
-  +String numero
-  +LocalDate dateCreation
-}
-class StatutCandidature {
-  <<enumeration>>
-  EnAttente
-  Acceptee
-  Refusee
-}
-
-Compte "1" -- "0..1" AgentRH
-Compte "1" -- "0..1" Mentor
-Mentor "1" -- "0..*" ProjetStage
-ProjetStage "1" *-- "0..*" Tache
-ProjetStage "0..*" -- "1..*" NiveauEtudes
-ProjetStage "0..*" -- "0..*" Competence
-CompetenceProjet -- ProjetStage
-CompetenceProjet -- Competence
-Candidature "0..*" -- "1" NiveauEtudes
-Candidature "0..*" -- "0..*" ProjetStage
-Candidature "0..*" -- "1..*" Competence
-Candidature "1" -- "0..1" ConventionStage
-Candidature ..> StatutCandidature
-```
 
 Key constraints expressed in the source model:
 
@@ -235,19 +129,6 @@ All sources live under `backend/src/main/java/com/devtec/gestion_stages/`:
 | `exception/` | `ResourceNotFoundException`, `BusinessException` |
 
 The application entry point is `GestionStagesApplication.java` (`@SpringBootApplication`).
-
-### Request flow
-
-```mermaid
-flowchart LR
-  Client[Client / front-end] -->|HTTP + Bearer token| Filter[JwtAuthenticationFilter]
-  Filter --> Controller[Controller]
-  Controller -->|Request record| Service[Service]
-  Service -->|Entity| Repository[Spring Data repository]
-  Repository --> DB[("SQL Server database")]
-  Service -->|ModelMapper| Response[Response record]
-  Response --> Controller
-```
 
 1. The filter reads `Authorization: Bearer <token>`, validates it and puts the `UserDetails` into the security context.
 2. The controller deserializes the JSON body into a `record`, calls one service method and returns the result (typically `200`, `201` on creation, `204` on deletion, `404` when an ID is unknown).
@@ -331,28 +212,6 @@ Example request bodies (record fields):
 - `/api/auth/**` is public; `/api/**` and all other routes require authentication.
 - `JwtAuthenticationFilter` runs before `UsernamePasswordAuthenticationFilter`.
 - A `BCryptPasswordEncoder` bean and an `AuthenticationManager` are registered.
-
-Login flow:
-
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant A as POST /api/auth/login
-  participant J as JwtTokenProvider
-  participant F as JwtAuthenticationFilter
-  participant S as Protected /api/** endpoint
-
-  C->>A: { login, mdp }
-  A->>A: AuthenticationManager.authenticate()
-  A->>J: generateToken(authentication)
-  J-->>C: { token } (valid 24 h)
-  C->>F: Authorization: Bearer <token>
-  F->>F: validate + load UserDetails
-  F->>S: authenticated request
-  S-->>C: response
-```
-
-`app.jwt.expiration-ms=86400000` means a token is valid for 24 hours. `CustomUserDetailsService` currently assigns the single authority `ROLE_USER` to every account; the registration `role` (`MENTOR` / `AGENT_RH`) only creates the matching default `Mentor` or `AgentRH` profile.
 
 ---
 
